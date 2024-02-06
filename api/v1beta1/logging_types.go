@@ -19,6 +19,7 @@ package v1beta1
 import (
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -34,21 +35,6 @@ type LoggingSpec struct {
 	// +kubebuilder:default=10514
 	Port int32 `json:"port"`
 
-	// TargetPort is the port where the logging syslog receiver is listening
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=10514
-	TargetPort int `json:"targetPort"`
-
-	// CLONamespace points to the namespace where the cluster-logging-operator is deployed
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=openshift-logging
-	CLONamespace string `json:"cloNamespace"`
-
-	// Annotations is a way to configure certain LoadBalancers, like MetalLB
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={metallb.universe.tf/address-pool: internalapi, metallb.universe.tf/allow-shared-ip: internalapi, metallb.universe.tf/loadBalancerIPs: "172.17.0.80"}
-	Annotations map[string]string `json:"annotations"`
-
 	// The number of retries rsyslog will attempt before abandoning
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=100
@@ -62,6 +48,10 @@ type LoggingSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=10000
 	RsyslogQueueSize int32 `json:"rsyslogQueueSize"`
+
+	// Override configuration for the Service created to serve traffic to the cluster.
+	// +kubebuilder:validation:Optional
+	Override *APIOverrideSpec `json:"override"`
 }
 
 // LoggingStatus defines the observed state of Logging

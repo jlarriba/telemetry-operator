@@ -21,6 +21,7 @@ import (
 
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/service"
 )
 
 // TODO: We might want to split this to aodh and ceilometer and move it to appropriate files
@@ -116,6 +117,12 @@ type LoggingSection struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	// Template - Overrides to use when creating the OpenStack Logging
 	LoggingSpec `json:",inline"`
+}
+
+// APIOverrideSpec to override the generated manifest of several child resources.
+type APIOverrideSpec struct {
+	// Override configuration for the Service created to serve traffic to the cluster.
+	Service *service.RoutedOverrideSpec `json:"service,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry

@@ -21,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
-	"github.com/openstack-k8s-operators/lib-common/modules/common/service"
 )
 
 const (
@@ -109,12 +108,6 @@ type Aodh struct {
 
 	// +kubebuilder:validation:Required
 	ListenerImage string `json:"listenerImage"`
-}
-
-// APIOverrideSpec to override the generated manifest of several child resources.
-type APIOverrideSpec struct {
-	// Override configuration for the Service created to serve traffic to the cluster.
-	Service *service.RoutedOverrideSpec `json:"service,omitempty"`
 }
 
 // AutoscalingSpec defines the desired state of Autoscaling

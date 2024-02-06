@@ -40,6 +40,7 @@ import (
 	common_rbac "github.com/openstack-k8s-operators/lib-common/modules/common/rbac"
 	secret "github.com/openstack-k8s-operators/lib-common/modules/common/secret"
 	util "github.com/openstack-k8s-operators/lib-common/modules/common/util"
+	service "github.com/openstack-k8s-operators/lib-common/modules/common/service"
 
 	telemetryv1 "github.com/openstack-k8s-operators/telemetry-operator/api/v1beta1"
 	ceilometer "github.com/openstack-k8s-operators/telemetry-operator/pkg/ceilometer"
@@ -244,10 +245,93 @@ func (r *LoggingReconciler) reconcileNormal(ctx context.Context, instance *telem
 		common.AppSelector: logging.ServiceName,
 	}
 
+	// Create the service
+	svcOverride := instance.Spec.Override.Service
+	if svcOverride == nil {
+		svcOverride = &service.RoutedOverrideSpec{}
+	}
+	if svcOverride.EmbeddedLabelsAnnotations == nil {
+		svcOverride.EmbeddedLabelsAnnotations = &service.EmbeddedLabelsAnnotations{}
+	}
+
+	endpointTypeStr := "internal"
+
+	exportLabels := util.MergeStringMaps(
+		serviceLabels,
+		map[string]string{
+			service.AnnotationEndpointKey: endpointTypeStr,
+		},
+	)
+
+	selector := map[string]string{
+		"app.kubernetes.io/instance": "collector",
+		"component":                  "collector",
+		"provider":                   "openshift",
+	}
+
+	svc, err := service.NewService(
+		service.GenericService(&service.GenericServiceDetails{
+			Name:      "openstack-" + logging.ServiceName,
+			Namespace: instance.Namespace,
+			Labels:    exportLabels,
+			Selector:  selector,
+			Port: service.GenericServicePort{
+				Name:     	"syslog",
+				Protocol:   corev1.Protocol("TCP"),
+				Port:       instance.Spec.Port,
+			},
+		}),
+		5,
+		&svcOverride.OverrideSpec,
+	)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.ExposeServiceReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.ExposeServiceReadyErrorMessage,
+			err.Error()))
+
+		return ctrl.Result{}, err
+	}
+
+	svc.AddAnnotation(map[string]string{
+		service.AnnotationEndpointKey: endpointTypeStr,
+	})
+	svc.AddAnnotation(map[string]string{
+		service.AnnotationIngressCreateKey: "false",
+	})
+	if svc.GetServiceType() == corev1.ServiceTypeLoadBalancer {
+		svc.AddAnnotation(map[string]string{
+			service.AnnotationHostnameKey: svc.GetServiceHostname(), // add annotation to register service name in dnsmasq
+		})
+	}
+
+	ctrlResult, err := svc.CreateOrPatch(context.TODO(), helper)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.ExposeServiceReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.ExposeServiceReadyErrorMessage,
+			err.Error()))
+
+		return ctrlResult, err
+	} else if (ctrlResult != ctrl.Result{}) {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.ExposeServiceReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			condition.ExposeServiceReadyRunningMessage))
+		return ctrlResult, nil
+	}
+	// End creating Service
+
+	/*
 	_, _, err = logging.Service(instance, helper, serviceLabels)
 	if err != nil {
 		return ctrl.Result{}, err
-	}
+	}*/
 	// Operators cannot own objects in different namespaces
 	/*err := controllerutil.SetControllerReference(instance, service, r.Scheme)
 	if err != nil {
