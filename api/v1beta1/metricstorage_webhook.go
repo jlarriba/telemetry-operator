@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -55,6 +57,7 @@ func (spec *MetricStorageSpec) Default() {
 		// NOTE: If we want to enable dashboards in the future by default, set
 		//       it here like Alerting above
 	}
+	fmt.Printf("\n\n\n-------------\nDATAPLANE_NETWORK: %v\n\n\n-----------------", *spec.DataplaneNetwork)
 	if spec.DataplaneNetwork == nil || *spec.DataplaneNetwork == "" {
 		*spec.DataplaneNetwork = "ctlplane"
 	}
