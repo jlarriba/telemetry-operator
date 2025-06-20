@@ -1,0 +1,125 @@
+/*
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package cloudkitty
+
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	apiScriptVolume  = "cloudkitty-api-scripts"
+	apiConfigVolume  = "cloudkitty-api-config-data"
+	procScriptVolume = "cloudkitty-proc-scripts"
+	procConfigVolume = "cloudkitty-proc-config-data"
+	logVolume        = "logs"
+)
+
+var (
+	// scriptMode is the default permissions mode for Scripts volume
+	scriptMode int32 = 0740
+	// configMode is the 640 permissions mode
+	configMode int32 = 0640
+)
+
+// getApiVolumes - service volumes
+func getApiVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: "scripts",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &scriptMode,
+					SecretName:  apiScriptVolume,
+				},
+			},
+		}, {
+			Name: "config-data",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &configMode,
+					SecretName:  apiConfigVolume,
+				},
+			},
+		},
+	}
+}
+
+// getProcVolumes - service volumes
+func getProcVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: "scripts",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &scriptMode,
+					SecretName:  procScriptVolume,
+				},
+			},
+		}, {
+			Name: "config-data",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &configMode,
+					SecretName:  procConfigVolume,
+				},
+			},
+		},
+	}
+}
+
+// getVolumeMounts - general VolumeMounts
+func getVolumeMounts(serviceName string) []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "scripts",
+			MountPath: "/var/lib/openstack/bin",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "config-data",
+			MountPath: "/var/lib/openstack/config",
+			ReadOnly:  true,
+		},
+		{
+			Name:      "config-data",
+			MountPath: "/var/lib/kolla/config_files/config.json",
+			SubPath:   serviceName + "-config.json",
+			ReadOnly:  true,
+		},
+	}
+}
+
+// getCustomPrometheusCaVolume - Volume for CA certificate of user deployed Prometheus
+func getCustomPrometheusCaVolume(secretName string) corev1.Volume {
+	return corev1.Volume{
+		Name: "custom-prometheus-ca",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+			},
+		},
+	}
+}
+
+// getCustomPrometheusCaVolumeMount - VolumeMount for CA certificate of user deployed Prometheus
+func getCustomPrometheusCaVolumeMount(fileName string) corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      "custom-prometheus-ca",
+		MountPath: CustomPrometheusCaCertFolderPath + fileName,
+		SubPath:   fileName,
+		ReadOnly:  true,
+	}
+}

@@ -181,8 +181,7 @@ func (r *AutoscalingReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		condition.UnknownCondition(condition.RabbitMqTransportURLReadyCondition, condition.InitReason, condition.RabbitMqTransportURLReadyInitMessage),
 		condition.UnknownCondition(condition.DeploymentReadyCondition, condition.InitReason, condition.DeploymentReadyInitMessage),
 		// right now we have no dedicated KeystoneServiceReadyInitMessage
-		condition.UnknownCondition(condition.KeystoneServiceReadyCondition, condition.InitReason, ""),
-		condition.UnknownCondition(condition.KeystoneEndpointReadyCondition, condition.InitReason, ""),
+
 		condition.UnknownCondition(condition.TLSInputReadyCondition, condition.InitReason, condition.InputReadyInitMessage),
 	)
 	instance.Status.Conditions.Init(&cl)

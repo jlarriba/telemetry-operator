@@ -19,9 +19,9 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	topologyv1 "github.com/openstack-k8s-operators/infra-operator/apis/topology/v1beta1"
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
-	topologyv1 "github.com/openstack-k8s-operators/infra-operator/apis/topology/v1beta1"
 )
 
 // PasswordsSelector to identify the Service password from the Secret
@@ -35,6 +35,11 @@ type PasswordsSelector struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=AodhPassword
 	AodhService string `json:"aodhService"`
+
+	// AodhService - Selector to get the aodh service password from the Secret
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=CloudKittyPassword
+	CloudKittyService string `json:"cloudKittyService"`
 }
 
 // TelemetrySpec defines the desired state of Telemetry
@@ -165,6 +170,20 @@ type LoggingSection struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	// Template - Overrides to use when creating the OpenStack Logging
 	LoggingSpec `json:",inline"`
+}
+
+// CloudKittySection defines the desired state of the logging service
+type CloudKittySection struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=true
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	// Enabled - Whether OpenStack logging service should be deployed and managed
+	Enabled *bool `json:"enabled"`
+
+	// +kubebuilder:validation:Optional
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	// Template - Overrides to use when creating the OpenStack Logging
+	CloudKittySpec `json:",inline"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry
