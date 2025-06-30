@@ -829,6 +829,12 @@ func (r *CloudKittyReconciler) generateServiceConfigs(
 	templateParameters["MemcachedServersWithInet"] = memcached.GetMemcachedServerListWithInetString()
 	templateParameters["TimeOut"] = instance.Spec.APITimeout
 
+	templateParameters["TLS"] = false
+	if instance.Spec.CloudKittyProc.TLS.Enabled() {
+		templateParameters["TLS"] = true
+		templateParameters["CAFile"] = tls.DownstreamTLSCABundlePath
+	}
+
 	// create httpd  vhost template parameters
 	httpdVhostConfig := map[string]interface{}{}
 	for _, endpt := range []service.Endpoint{service.EndpointInternal, service.EndpointPublic} {
@@ -961,7 +967,7 @@ func (r *CloudKittyReconciler) procDeploymentCreateOrUpdate(ctx context.Context,
 		DatabaseHostname:       instance.Status.DatabaseHostname,
 		TransportURLSecret:     instance.Status.TransportURLSecret,
 		ServiceAccount:         instance.RbacResourceName(),
-		TLS:                    instance.Spec.CloudKittyAPI.TLS.Ca,
+		//TLS:                    instance.Spec.CloudKittyProc.TLS.Ca,
 	}
 
 	if cloudKittyProcSpec.NodeSelector == nil {
