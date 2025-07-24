@@ -82,7 +82,6 @@ type CloudKittySpecBase struct {
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=60
-	// +kubebuilder:validation:Minimum=10
 	// APITimeout for HAProxy, Apache, and rpc_response_timeout
 	APITimeout int `json:"apiTimeout"`
 
