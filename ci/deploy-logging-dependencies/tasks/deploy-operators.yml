@@ -2,9 +2,12 @@
 - name: Get latest loki-operator channel
   ansible.builtin.shell:
     cmd: >-
-      oc get packagemanifest loki-operator -n openshift-marketplace
-      --output jsonpath='{range .status.channels[*]}{.name}{"\n"}{end}'
+      set -o pipefail &&
+      oc get packagemanifests -n openshift-marketplace
+      --selector=catalog=redhat-operators
+      --output jsonpath='{range .items[?(@.status.packageName=="loki-operator")].status.channels[*]}{.name}{"\n"}{end}'
       | grep '^stable' | sort -V | tail -1
+    executable: /bin/bash
   register: _loki_channel
   changed_when: false
   until: _loki_channel.stdout | trim | length > 0
@@ -14,9 +17,12 @@
 - name: Get latest cluster-logging channel
   ansible.builtin.shell:
     cmd: >-
-      oc get packagemanifest cluster-logging -n openshift-marketplace
-      --output jsonpath='{range .status.channels[*]}{.name}{"\n"}{end}'
+      set -o pipefail &&
+      oc get packagemanifests -n openshift-marketplace
+      --selector=catalog=redhat-operators
+      --output jsonpath='{range .items[?(@.status.packageName=="cluster-logging")].status.channels[*]}{.name}{"\n"}{end}'
       | grep '^stable' | sort -V | tail -1
+    executable: /bin/bash
   register: _clo_channel
   changed_when: false
   until: _clo_channel.stdout | trim | length > 0
@@ -28,7 +34,9 @@
     that:
       - _loki_channel.stdout | trim | length > 0
       - _clo_channel.stdout | trim | length > 0
-    fail_msg: "Could not resolve operator channels from packagemanifests"
+    fail_msg: >-
+      Could not resolve stable Loki and cluster-logging channels from the
+      redhat-operators catalog
     success_msg: "loki-operator: {{ _loki_channel.stdout }}, cluster-logging: {{ _clo_channel.stdout }}"
 
 - name: Create temp directory for operator manifests

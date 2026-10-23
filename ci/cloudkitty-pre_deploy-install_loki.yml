@@ -18,9 +18,12 @@
     - name: Get latest loki-operator channel
       ansible.builtin.shell:
         cmd: >-
-          oc get packagemanifest loki-operator -n openshift-marketplace
-          --output jsonpath='{range .status.channels[*]}{.name}{"\n"}{end}'
+          set -o pipefail &&
+          oc get packagemanifests -n openshift-marketplace
+          --selector=catalog=redhat-operators
+          --output jsonpath='{range .items[?(@.status.packageName=="loki-operator")].status.channels[*]}{.name}{"\n"}{end}'
           | grep '^stable' | sort -V | tail -1
+        executable: /bin/bash
       register: _loki_channel
       changed_when: false
       until: _loki_channel.stdout | trim | length > 0
@@ -30,7 +33,9 @@
     - name: Verify loki-operator channel was resolved
       ansible.builtin.assert:
         that: _loki_channel.stdout | trim | length > 0
-        fail_msg: "Could not resolve loki-operator channel from packagemanifests"
+        fail_msg: >-
+          Could not resolve a stable loki-operator channel from the
+          redhat-operators catalog
         success_msg: "loki-operator channel: {{ _loki_channel.stdout }}"
 
     - name: Create temp directory for loki manifests
